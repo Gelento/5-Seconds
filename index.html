@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RoundTimer">
+<meta name="theme-color" content="#0d1117">
+<title>Rotations-Timer</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --card2:#1c2330; --line:#2b3648;
+    --txt:#e6edf3; --dim:#8b98a9; --acc:#4f8ef7; --ok:#2ecc71; --warn:#f5a623; --bad:#ff5d5d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    transition:background .3s;
+  }
+  body.flash-turn{background:#173a63}
+  body.flash-end{background:#5a2020}
+  body.flash-break{background:#1d4a2e}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+  header h1{font-size:17px;font-weight:600;letter-spacing:.3px}
+  .hbtns{display:flex;gap:10px}
+  .icobtn{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:10px;
+    width:40px;height:40px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .icobtn:active{background:var(--card2)}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;min-height:0}
+  .roundinfo{font-size:15px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+  .phase{font-size:14px;font-weight:600;padding:4px 14px;border-radius:20px;background:var(--card);border:1px solid var(--line)}
+  .phase.turn{color:var(--acc)} .phase.break{color:var(--ok)} .phase.idle{color:var(--dim)} .phase.done{color:var(--warn)}
+  .player{font-size:clamp(26px,7vw,40px);font-weight:700;text-align:center;min-height:1.2em}
+  .ring{position:relative;width:min(62vw,300px,42vh);aspect-ratio:1}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .track{stroke:var(--card2)} 
+  .ring .prog{stroke:var(--acc);stroke-linecap:round;transition:stroke .3s}
+  .ring.break .prog{stroke:var(--ok)}
+  .ring.low .prog{stroke:var(--bad)}
+  .time{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(48px,15vw,84px);font-weight:700;font-variant-numeric:tabular-nums}
+  .nextup{font-size:15px;color:var(--dim)}
+  .nextup b{color:var(--txt)}
+
+  .controls{display:flex;gap:12px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:0 auto}
+  .btn{flex:1;padding:16px 0;border-radius:14px;border:1px solid var(--line);background:var(--card);
+    color:var(--txt);font-size:17px;font-weight:600;cursor:pointer}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  .btn.stop{background:var(--bad);border-color:var(--bad);color:#fff}
+  .btn.small{flex:0 0 auto;padding:16px 18px;font-size:15px;font-weight:500}
+
+  /* Settings-Panel */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:20}
+  .sheet.open{display:block}
+  .panel{position:absolute;right:0;top:0;bottom:0;width:min(92vw,380px);background:var(--card);
+    border-left:1px solid var(--line);overflow-y:auto;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling:touch}
+  .panel h2{font-size:18px;margin-bottom:6px}
+  .panel h3{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row label{font-size:15px}
+  .row input[type=number]{width:76px;padding:8px;border-radius:8px;border:1px solid var(--line);
+    background:var(--card2);color:var(--txt);font-size:16px;text-align:center}
+  .row input[type=range]{width:130px;accent-color:var(--acc)}
+  .switch{position:relative;width:50px;height:29px;flex:0 0 auto}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:29px;cursor:pointer;transition:.2s}
+  .slider:before{content:"";position:absolute;height:23px;width:23px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--ok);border-color:var(--ok)}
+  .switch input:checked + .slider:before{transform:translateX(21px)}
+  .names{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .names input{padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:16px}
+  .preset{display:inline-block;margin:4px 6px 4px 0;padding:8px 14px;border-radius:20px;background:var(--card2);
+    border:1px solid var(--line);color:var(--txt);font-size:14px;cursor:pointer}
+  .preset:active{background:var(--acc)}
+  .closebtn{width:100%;margin-top:22px;padding:14px;border-radius:12px;background:var(--acc);border:none;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+  .hint{font-size:12.5px;color:var(--dim);line-height:1.5;margin-top:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⏱ Rotations-Timer</h1>
+  <div class="hbtns">
+    <button class="icobtn" id="fsBtn" title="Vollbild">⛶</button>
+    <button class="icobtn" id="gearBtn" title="Einstellungen">⚙︎</button>
+  </div>
+</header>
+
+<main>
+  <div class="roundinfo" id="roundInfo">Bereit</div>
+  <div class="phase idle" id="phaseBadge">Warte auf Start</div>
+  <div class="player" id="playerName">–</div>
+  <div class="ring" id="ring">
+    <svg viewBox="0 0 100 100">
+      <circle class="track" cx="50" cy="50" r="45" fill="none" stroke-width="7"/>
+      <circle class="prog" id="progCircle" cx="50" cy="50" r="45" fill="none" stroke-width="7"
+        stroke-dasharray="282.74" stroke-dashoffset="0"/>
+    </svg>
+    <div class="time" id="timeDisp">0:30</div>
+  </div>
+  <div class="nextup" id="nextUp">&nbsp;</div>
+</main>
+
+<div class="controls">
+  <button class="btn small" id="testBtn">🔊 Test</button>
+  <button class="btn primary" id="startBtn">Start</button>
+  <button class="btn small" id="resetBtn">↺</button>
+</div>
+
+<!-- Einstellungen -->
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2>Einstellungen</h2>
+
+    <h3>Schnell-Presets</h3>
+    <div>
+      <span class="preset" data-p="30,3,60">30 s · 3 Runden</span>
+      <span class="preset" data-p="60,3,90">60 s · 3 Runden</span>
+      <span class="preset" data-p="45,5,60">45 s · 5 Runden</span>
+      <span class="preset" data-p="20,10,30">Blitz 20 s</span>
+    </div>
+
+    <h3>Timer</h3>
+    <div class="row"><label>Sekunden pro Spieler</label><input type="number" id="cfgSecs" min="5" max="600" value="30"></div>
+    <div class="row"><label>Runden</label><input type="number" id="cfgRounds" min="1" max="50" value="3"></div>
+    <div class="row"><label>Pause (Sekunden)</label><input type="number" id="cfgBreak" min="0" max="600" value="60"></div>
+
+    <h3>Spieler</h3>
+    <div class="row"><label>Anzahl</label><input type="number" id="cfgCount" min="1" max="12" value="4"></div>
+    <div class="names" id="nameList"></div>
+
+    <h3>Signale</h3>
+    <div class="row"><label>Sprachansagen</label>
+      <span class="switch"><input type="checkbox" id="cfgVoice" checked><span class="slider"></span></span></div>
+    <div class="row"><label>Vibration</label>
+      <span class="switch"><input type="checkbox" id="cfgVib" checked><span class="slider"></span></span></div>
+    <div class="row"><label>Display wachhalten</label>
+      <span class="switch"><input type="checkbox" id="cfgWake" checked><span class="slider"></span></span></div>
+    <div class="row"><label>Lautstärke</label><input type="range" id="cfgVol" min="0" max="100" value="80"></div>
+
+    <button class="closebtn" id="closeBtn">Fertig</button>
+    <div class="hint">iPhone-Tipp: Seitenschalter auf Ton stellen und einmal „Test“ tippen, damit iOS Audio und Sprache freigibt. „Display wachhalten“ verhindert die Bildschirmsperre während des Timers.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- Konfiguration (im Speicher) ----------
+  var cfg = { secs:30, rounds:3, brk:60, count:4, voice:true, vib:true, wake:true, vol:0.8,
+              names:["Spieler 1","Spieler 2","Spieler 3","Spieler 4"] };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var el = {
+    round:$("roundInfo"), badge:$("phaseBadge"), player:$("playerName"), time:$("timeDisp"),
+    ring:$("ring"), prog:$("progCircle"), next:$("nextUp"),
+    start:$("startBtn"), reset:$("resetBtn"), test:$("testBtn"),
+    sheet:$("sheet"), gear:$("gearBtn"), close:$("closeBtn"), fs:$("fsBtn"),
+    cSecs:$("cfgSecs"), cRounds:$("cfgRounds"), cBrk:$("cfgBreak"), cCount:$("cfgCount"),
+    cVoice:$("cfgVoice"), cVib:$("cfgVib"), cWake:$("cfgWake"), cVol:$("cfgVol"), nameList:$("nameList")
+  };
+  var CIRC = 282.74;
+
+  // ---------- Audio ----------
+  var ctx=null, master=null;
+  function ensureAudio(){
+    if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)();
+      master=ctx.createGain(); master.connect(ctx.destination); }
+    if(ctx.state==="suspended") ctx.resume();
+    master.gain.value = cfg.vol;
+  }
+  function tone(f,t,d,type){
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type||"sine"; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(1,t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+d+0.05);
+  }
+  function beepTurn(){ ensureAudio(); tone(880,ctx.currentTime+0.03,0.22,"square"); vib(120); }
+  function beepRoundEnd(){ ensureAudio(); var t=ctx.currentTime+0.03; tone(440,t,0.25,"square"); tone(440,t+0.35,0.4,"square"); vib([150,100,150]); }
+  function beepFinish(){ ensureAudio(); var t=ctx.currentTime+0.03; [660,880,1100].forEach(function(f,i){ tone(f,t+i*0.28,0.24,"triangle"); }); vib([200,100,200,100,300]); }
+  function vib(p){ if(cfg.vib && navigator.vibrate) try{navigator.vibrate(p);}catch(e){} }
+
+  // ---------- Sprache ----------
+  var voiceDE=null;
+  function pickVoice(){
+    var vs=window.speechSynthesis?window.speechSynthesis.getVoices():[];
+    for(var i=0;i<vs.length;i++) if(vs[i].lang&&vs[i].lang.indexOf("de")===0){voiceDE=vs[i];break;}
+  }
+  if(window.speechSynthesis){ pickVoice(); window.speechSynthesis.onvoiceschanged=pickVoice; }
+  function speak(txt){
+    if(!cfg.voice||!window.speechSynthesis) return;
+    try{
+      var u=new SpeechSynthesisUtterance(txt);
+      u.lang="de-DE"; if(voiceDE) u.voice=voiceDE; u.volume=cfg.vol;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function primeSpeech(){
+    if(!window.speechSynthesis) return;
+    try{ window.speechSynthesis.cancel(); window.speechSynthesis.resume();
+      var u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); }catch(e){}
+  }
+
+  // ---------- Wake Lock ----------
+  var wakeLock=null;
+  function reqWake(){
+    if(!cfg.wake||!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then(function(w){wakeLock=w;}).catch(function(){});
+  }
+  function relWake(){ if(wakeLock){ wakeLock.release().catch(function(){}); wakeLock=null; } }
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible" && running) reqWake();
+  });
+
+  // ---------- Zustand ----------
+  var running=false, paused=false, phase="idle";
+  var round=1, playerIdx=0, remaining=cfg.secs, total=cfg.secs;
+  var timerId=null, lastTick=0, spokenMarks={};
+
+  function fmt(s){ s=Math.max(0,Math.ceil(s)); var m=Math.floor(s/60); return m+":"+("0"+(s%60)).slice(-2); }
+
+  function render(){
+    el.time.textContent=fmt(remaining);
+    var frac= total>0 ? remaining/total : 0;
+    el.prog.setAttribute("stroke-dashoffset", String(CIRC*(1-frac)));
+    el.ring.classList.toggle("break", phase==="break");
+    el.ring.classList.toggle("low", phase==="turn" && remaining<=5);
+    el.badge.className="phase "+(phase==="turn"?"turn":phase==="break"?"break":phase==="done"?"done":"idle");
+    if(phase==="idle"){ el.badge.textContent="Warte auf Start"; el.round.textContent="Bereit";
+      el.player.textContent="–"; el.next.innerHTML="&nbsp;"; }
+    else if(phase==="turn"){ el.badge.textContent="Am Zug"; el.round.textContent="Runde "+round+" / "+cfg.rounds;
+      el.player.textContent=cfg.names[playerIdx];
+      var nx = playerIdx+1<cfg.count ? "Danach: <b>"+esc(cfg.names[playerIdx+1])+"</b>"
+             : (round<cfg.rounds||cfg.brk>0 ? "Danach: <b>Pause</b>" : "Letzter Zug");
+      el.next.innerHTML=nx; }
+    else if(phase==="break"){ el.badge.textContent="Pause"; el.round.textContent="Runde "+round+" beendet";
+      el.player.textContent="☕ Pause";
+      el.next.innerHTML= round<cfg.rounds ? "Danach: <b>Runde "+(round+1)+"</b>" : "Danach: <b>Ende</b>"; }
+    else if(phase==="done"){ el.badge.textContent="Fertig 🎉"; el.round.textContent=cfg.rounds+" Runden gespielt";
+      el.player.textContent="Geschafft!"; el.next.innerHTML="&nbsp;"; }
+    el.start.textContent = running ? (paused?"Weiter":"Pause") : "Start";
+    el.start.classList.toggle("primary", !running||paused);
+    el.start.classList.toggle("stop", running&&!paused);
+  }
+  function esc(s){ return String(s).replace(/[<>&]/g,function(c){return{"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}); }
+
+  function flash(kind){
+    document.body.classList.add("flash-"+kind);
+    setTimeout(function(){ document.body.classList.remove("flash-"+kind); },450);
+  }
+
+  function startPhaseTurn(){
+    phase="turn"; remaining=cfg.secs; total=cfg.secs; spokenMarks={};
+    render();
+  }
+  function startPhaseBreak(){
+    phase="break"; remaining=cfg.brk; total=cfg.brk; spokenMarks={};
+    flash("break"); speak("Pause");
+    render();
+  }
+
+  function advance(){
+    if(phase==="turn"){
+      if(playerIdx+1 < cfg.count){
+        playerIdx++; beepTurn(); flash("turn");
+        speak(cfg.names[playerIdx]); startPhaseTurn();
+      } else {
+        beepRoundEnd(); flash("end");
+        if(round < cfg.rounds){
+          if(cfg.brk>0){ startPhaseBreak(); }
+          else { round++; playerIdx=0; speak("Runde "+round); startPhaseTurn(); }
+        } else if(cfg.brk>0 && false){ /* nie Pause nach letzter Runde */ }
+        else { finish(); }
+      }
+    } else if(phase==="break"){
+      round++; playerIdx=0; beepTurn(); flash("turn");
+      speak("Runde "+round+". "+cfg.names[0]); startPhaseTurn();
+    }
+  }
+
+  function finish(){
+    phase="done"; running=false; paused=false;
+    clearInterval(timerId); timerId=null; relWake();
+    beepFinish(); speak("Alle Runden geschafft. Gut gemacht!");
+    remaining=0; total=1; render();
+  }
+
+  function tick(){
+    var now=performance.now(), dt=(now-lastTick)/1000; lastTick=now;
+    if(paused) return;
+    remaining-=dt;
+    // Sprachmarken
+    if(phase==="break"){
+      var half=Math.floor(cfg.brk/2);
+      if(cfg.brk>=20 && remaining<=half && !spokenMarks.half){ spokenMarks.half=1; speak("Halbzeit"); }
+      [3,2,1].forEach(function(n){
+        if(remaining<=n && !spokenMarks["c"+n]){ spokenMarks["c"+n]=1; speak(String(n)); }
+      });
+    }
+    if(phase==="turn" && remaining<=3 && !spokenMarks.warn && cfg.secs>=15){
+      spokenMarks.warn=1; ensureAudio(); tone(660,ctx.currentTime+0.02,0.1,"sine");
+    }
+    if(remaining<=0){ advance(); if(!running) return; }
+    render();
+  }
+
+  // ---------- Steuerung ----------
+  el.start.addEventListener("click",function(){
+    ensureAudio(); primeSpeech();
+    if(!running){
+      readCfg();
+      running=true; paused=false; round=1; playerIdx=0;
+      startPhaseTurn(); beepTurn(); flash("turn");
+      speak("Runde 1. "+cfg.names[0]);
+      lastTick=performance.now();
+      timerId=setInterval(tick,100);
+      reqWake();
+    } else if(paused){ paused=false; lastTick=performance.now(); reqWake(); }
+    else { paused=true; relWake(); }
+    render();
+  });
+  el.reset.addEventListener("click",function(){
+    running=false; paused=false; phase="idle";
+    clearInterval(timerId); timerId=null; relWake();
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
+    readCfg(); remaining=cfg.secs; total=cfg.secs; render();
+  });
+  el.test.addEventListener("click",function(){
+    ensureAudio(); primeSpeech(); beepTurn(); flash("turn"); speak("Ton funktioniert");
+  });
+
+  // ---------- Einstellungen ----------
+  function buildNames(){
+    el.nameList.innerHTML="";
+    for(var i=0;i<cfg.count;i++){
+      var inp=document.createElement("input");
+      inp.type="text"; inp.value=cfg.names[i]||("Spieler "+(i+1)); inp.dataset.i=i;
+      inp.addEventListener("input",function(){ cfg.names[this.dataset.i]=this.value||("Spieler "+(1+ +this.dataset.i)); if(!running)render(); });
+      el.nameList.appendChild(inp);
+    }
+  }
+  function readCfg(){
+    cfg.secs = clamp(el.cSecs.value,5,600,30);
+    cfg.rounds = clamp(el.cRounds.value,1,50,3);
+    cfg.brk = clamp(el.cBrk.value,0,600,60);
+    var n = clamp(el.cCount.value,1,12,4);
+    if(n!==cfg.count){ cfg.count=n;
+      while(cfg.names.length<n) cfg.names.push("Spieler "+(cfg.names.length+1));
+      buildNames(); }
+    cfg.voice=el.cVoice.checked; cfg.vib=el.cVib.checked; cfg.wake=el.cWake.checked;
+    cfg.vol=el.cVol.value/100; if(master) master.gain.value=cfg.vol;
+  }
+  function clamp(v,min,max,d){ v=parseInt(v,10); if(isNaN(v))return d; return Math.min(max,Math.max(min,v)); }
+
+  el.gear.addEventListener("click",function(){ el.sheet.classList.add("open"); });
+  el.close.addEventListener("click",function(){ el.sheet.classList.remove("open"); readCfg(); if(!running){remaining=cfg.secs;total=cfg.secs;render();} });
+  el.sheet.addEventListener("click",function(e){ if(e.target===el.sheet){ el.close.click(); } });
+  el.cCount.addEventListener("change",readCfg);
+
+  document.querySelectorAll(".preset").forEach(function(p){
+    p.addEventListener("click",function(){
+      var v=this.dataset.p.split(",");
+      el.cSecs.value=v[0]; el.cRounds.value=v[1]; el.cBrk.value=v[2];
+      readCfg(); if(!running){remaining=cfg.secs;total=cfg.secs;render();}
+    });
+  });
+
+  // ---------- Vollbild ----------
+  el.fs.addEventListener("click",function(){
+    var d=document.documentElement;
+    if(!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(function(){});
+    else if(document.exitFullscreen) document.exitFullscreen();
+  });
+
+  buildNames(); render();
+})();
+</script>
+</body>
+</html>
