@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RoundTimer">
 <meta name="theme-color" content="#0d1117">
-<title>Rotations-Timer</title>
+<title>Round Timer</title>
 <style>
   :root{
     --bg:#0d1117; --card:#161b22; --card2:#1c2330; --line:#2b3648;
@@ -40,7 +40,7 @@
   .player{font-size:clamp(26px,7vw,40px);font-weight:700;text-align:center;min-height:1.2em}
   .ring{position:relative;width:min(62vw,300px,42vh);aspect-ratio:1}
   .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-  .ring .track{stroke:var(--card2)} 
+  .ring .track{stroke:var(--card2)}
   .ring .prog{stroke:var(--acc);stroke-linecap:round;transition:stroke .3s}
   .ring.break .prog{stroke:var(--ok)}
   .ring.low .prog{stroke:var(--bad)}
@@ -57,7 +57,6 @@
   .btn.stop{background:var(--bad);border-color:var(--bad);color:#fff}
   .btn.small{flex:0 0 auto;padding:16px 18px;font-size:15px;font-weight:500}
 
-  /* Settings-Panel */
   .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:20}
   .sheet.open{display:block}
   .panel{position:absolute;right:0;top:0;bottom:0;width:min(92vw,380px);background:var(--card);
@@ -70,6 +69,7 @@
   .row input[type=number]{width:76px;padding:8px;border-radius:8px;border:1px solid var(--line);
     background:var(--card2);color:var(--txt);font-size:16px;text-align:center}
   .row input[type=range]{width:130px;accent-color:var(--acc)}
+  .row select{padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;max-width:170px}
   .switch{position:relative;width:50px;height:29px;flex:0 0 auto}
   .switch input{opacity:0;width:0;height:0}
   .slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:29px;cursor:pointer;transition:.2s}
@@ -83,21 +83,22 @@
   .preset:active{background:var(--acc)}
   .closebtn{width:100%;margin-top:22px;padding:14px;border-radius:12px;background:var(--acc);border:none;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
   .hint{font-size:12.5px;color:var(--dim);line-height:1.5;margin-top:14px}
+  .voiceinfo{font-size:12px;color:var(--dim);margin-top:6px}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⏱ Rotations-Timer</h1>
+  <h1 id="uiTitle">⏱ Round Timer</h1>
   <div class="hbtns">
-    <button class="icobtn" id="fsBtn" title="Vollbild">⛶</button>
-    <button class="icobtn" id="gearBtn" title="Einstellungen">⚙︎</button>
+    <button class="icobtn" id="fsBtn" title="Fullscreen">⛶</button>
+    <button class="icobtn" id="gearBtn" title="Settings">⚙︎</button>
   </div>
 </header>
 
 <main>
-  <div class="roundinfo" id="roundInfo">Bereit</div>
-  <div class="phase idle" id="phaseBadge">Warte auf Start</div>
+  <div class="roundinfo" id="roundInfo">Ready</div>
+  <div class="phase idle" id="phaseBadge">Waiting to start</div>
   <div class="player" id="playerName">–</div>
   <div class="ring" id="ring">
     <svg viewBox="0 0 100 100">
@@ -116,273 +117,486 @@
   <button class="btn small" id="resetBtn">↺</button>
 </div>
 
-<!-- Einstellungen -->
+<!-- Settings -->
 <div class="sheet" id="sheet">
   <div class="panel">
-    <h2>Einstellungen</h2>
+    <h2 id="uiSettings">Settings</h2>
 
-    <h3>Schnell-Presets</h3>
-    <div>
-      <span class="preset" data-p="30,3,60">30 s · 3 Runden</span>
-      <span class="preset" data-p="60,3,90">60 s · 3 Runden</span>
-      <span class="preset" data-p="45,5,60">45 s · 5 Runden</span>
-      <span class="preset" data-p="20,10,30">Blitz 20 s</span>
+    <div class="row" style="border-bottom:none;padding-top:4px">
+      <label id="uiLang">Language</label>
+      <select id="cfgLang">
+        <option value="en" selected>English</option>
+        <option value="de">Deutsch</option>
+      </select>
     </div>
 
-    <h3>Timer</h3>
-    <div class="row"><label>Sekunden pro Spieler</label><input type="number" id="cfgSecs" min="5" max="600" value="30"></div>
-    <div class="row"><label>Runden</label><input type="number" id="cfgRounds" min="1" max="50" value="3"></div>
-    <div class="row"><label>Pause (Sekunden)</label><input type="number" id="cfgBreak" min="0" max="600" value="60"></div>
+    <h3 id="uiPresets">Quick presets</h3>
+    <div>
+      <span class="preset" data-p="30,3,60" id="pr1">30 s · 3 rounds</span>
+      <span class="preset" data-p="60,3,90" id="pr2">60 s · 3 rounds</span>
+      <span class="preset" data-p="45,5,60" id="pr3">45 s · 5 rounds</span>
+      <span class="preset" data-p="20,10,30" id="pr4">Blitz 20 s</span>
+    </div>
 
-    <h3>Spieler</h3>
-    <div class="row"><label>Anzahl</label><input type="number" id="cfgCount" min="1" max="12" value="4"></div>
+    <h3 id="uiTimer">Timer</h3>
+    <div class="row"><label id="uiSecs">Seconds per player</label><input type="number" id="cfgSecs" min="5" max="600" value="30"></div>
+    <div class="row"><label id="uiRounds">Rounds</label><input type="number" id="cfgRounds" min="1" max="50" value="3"></div>
+    <div class="row"><label id="uiBreak">Break (seconds)</label><input type="number" id="cfgBreak" min="0" max="600" value="60"></div>
+
+    <h3 id="uiPlayers">Players</h3>
+    <div class="row"><label id="uiCount">Count</label><input type="number" id="cfgCount" min="1" max="12" value="4"></div>
     <div class="names" id="nameList"></div>
 
-    <h3>Signale</h3>
-    <div class="row"><label>Sprachansagen</label>
+    <h3 id="uiSignals">Signals</h3>
+    <div class="row"><label id="uiVoice">Voice announcements</label>
       <span class="switch"><input type="checkbox" id="cfgVoice" checked><span class="slider"></span></span></div>
-    <div class="row"><label>Vibration</label>
+    <div class="row"><label id="uiSpMode">Announcement style</label>
+      <select id="cfgSpMode">
+        <option value="full" selected>Full (with names)</option>
+        <option value="min">Minimal</option>
+      </select></div>
+    <div class="row"><label id="uiVib">Vibration</label>
       <span class="switch"><input type="checkbox" id="cfgVib" checked><span class="slider"></span></span></div>
-    <div class="row"><label>Display wachhalten</label>
+    <div class="row"><label id="uiWake">Keep screen awake</label>
       <span class="switch"><input type="checkbox" id="cfgWake" checked><span class="slider"></span></span></div>
-    <div class="row"><label>Lautstärke</label><input type="range" id="cfgVol" min="0" max="100" value="80"></div>
+    <div class="row"><label id="uiVol">Volume</label><input type="range" id="cfgVol" min="0" max="100" value="80"></div>
+    <div class="voiceinfo" id="voiceInfo"></div>
 
-    <button class="closebtn" id="closeBtn">Fertig</button>
-    <div class="hint">iPhone-Tipp: Seitenschalter auf Ton stellen und einmal „Test“ tippen, damit iOS Audio und Sprache freigibt. „Display wachhalten“ verhindert die Bildschirmsperre während des Timers.</div>
+    <button class="closebtn" id="closeBtn">Done</button>
+    <div class="hint" id="uiHint">iPhone tip: set the side switch to ring mode and tap "Test" once so iOS unlocks audio and speech. "Keep screen awake" prevents the screen from locking while the timer runs.</div>
   </div>
 </div>
 
 <script>
 (function(){
-  // ---------- Konfiguration (im Speicher) ----------
-  var cfg = { secs:30, rounds:3, brk:60, count:4, voice:true, vib:true, wake:true, vol:0.8,
-              names:["Spieler 1","Spieler 2","Spieler 3","Spieler 4"] };
+  // ---------- Zahlwörter ----------
+  function numDe(n){var w=["","eins","zwei","drei","vier","fünf","sechs","sieben","acht","neun","zehn","elf","zwölf"];return n<w.length?w[n]:String(n);}
+  function numEn(n){var w=["","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];return n<w.length?w[n]:String(n);}
 
-  var $ = function(id){ return document.getElementById(id); };
-  var el = {
-    round:$("roundInfo"), badge:$("phaseBadge"), player:$("playerName"), time:$("timeDisp"),
-    ring:$("ring"), prog:$("progCircle"), next:$("nextUp"),
-    start:$("startBtn"), reset:$("resetBtn"), test:$("testBtn"),
-    sheet:$("sheet"), gear:$("gearBtn"), close:$("closeBtn"), fs:$("fsBtn"),
-    cSecs:$("cfgSecs"), cRounds:$("cfgRounds"), cBrk:$("cfgBreak"), cCount:$("cfgCount"),
-    cVoice:$("cfgVoice"), cVib:$("cfgVib"), cWake:$("cfgWake"), cVol:$("cfgVol"), nameList:$("nameList")
+  // ---------- i18n ----------
+  var T = {
+    en: {
+      title:"⏱ Round Timer", settings:"Settings", lang:"Language", presets:"Quick presets",
+      timer:"Timer", secs:"Seconds per player", rounds:"Rounds", brk:"Break (seconds)",
+      players:"Players", count:"Count", signals:"Signals", voice:"Voice announcements",
+      spMode:"Announcement style", spFull:"Full (with names)", spMin:"Minimal",
+      vib:"Vibration", wake:"Keep screen awake", vol:"Volume", done:"Done",
+      hint:"iPhone tip: set the side switch to ring mode and tap \"Test\" once so iOS unlocks audio and speech. \"Keep screen awake\" prevents the screen from locking while the timer runs.",
+      ready:"Ready", waiting:"Waiting to start", active:"Your turn", pause:"Break", finished:"Done 🎉",
+      roundOf:function(r,n){return "Round "+r+" / "+n;},
+      roundDone:function(r){return "Round "+r+" complete";},
+      allDone:function(n){return n+" rounds played";},
+      congrats:"Well done!", breakLabel:"☕ Break",
+      nextP:function(n){return "Next up: <b>"+n+"</b>";},
+      nextBreak:"Next up: <b>Break</b>", lastTurn:"Last turn",
+      nextRound:function(r){return "Next up: <b>Round "+r+"</b>";}, nextEnd:"Next up: <b>Finish</b>",
+      start:"Start", pauseBtn:"Pause", resume:"Resume",
+      playerDefault:function(i){return "Player "+i;},
+      prRounds:function(s,r){return s+" s · "+r+" rounds";}, prBlitz:"Blitz 20 s",
+      voiceUsing:function(n){return "Voice: "+n;}, voiceNone:"No speech voice available on this device",
+      bcp:"en-US", num:numEn,
+      sp:{
+        full:{
+          start:function(name){return "Round one. "+name+", you're up!";},
+          turn:function(name){return name+", go!";},
+          lastTurn:function(name){return name+", last turn of the round!";},
+          brk:"Break time. Take a breather.",
+          half:"Halfway through the break.",
+          newRound:function(r,name){return "Here we go. Round "+numEn(r)+". "+name+", you start!";},
+          finish:"That's it, all rounds complete. Great job everyone!",
+          test:"Sound check okay."
+        },
+        min:{
+          start:"Go!",
+          turn:"Switch!",
+          lastTurn:"Last one!",
+          brk:"Break.",
+          half:"Halfway.",
+          newRound:function(r){return "Round "+numEn(r)+". Go!";},
+          finish:"Done!",
+          test:"Okay."
+        }
+      },
+      nums:["","one","two","three"],
+      prefVoices:["Samantha","Ava","Allison","Zoe","Daniel","Google US English","Google UK English Female","Aria","Jenny","Libby"]
+    },
+    de: {
+      title:"⏱ Runden-Timer", settings:"Einstellungen", lang:"Sprache", presets:"Schnell-Presets",
+      timer:"Timer", secs:"Sekunden pro Spieler", rounds:"Runden", brk:"Pause (Sekunden)",
+      players:"Spieler", count:"Anzahl", signals:"Signale", voice:"Sprachansagen",
+      spMode:"Ansagen-Stil", spFull:"Ausführlich (mit Namen)", spMin:"Minimal",
+      vib:"Vibration", wake:"Display wachhalten", vol:"Lautstärke", done:"Fertig",
+      hint:"iPhone-Tipp: Seitenschalter auf Ton stellen und einmal „Test“ tippen, damit iOS Audio und Sprache freigibt. „Display wachhalten“ verhindert die Bildschirmsperre, solange der Timer läuft.",
+      ready:"Bereit", waiting:"Warte auf Start", active:"Am Zug", pause:"Pause", finished:"Fertig 🎉",
+      roundOf:function(r,n){return "Runde "+r+" / "+n;},
+      roundDone:function(r){return "Runde "+r+" beendet";},
+      allDone:function(n){return n+" Runden gespielt";},
+      congrats:"Geschafft!", breakLabel:"☕ Pause",
+      nextP:function(n){return "Danach: <b>"+n+"</b>";},
+      nextBreak:"Danach: <b>Pause</b>", lastTurn:"Letzter Zug",
+      nextRound:function(r){return "Danach: <b>Runde "+r+"</b>";}, nextEnd:"Danach: <b>Ende</b>",
+      start:"Start", pauseBtn:"Pause", resume:"Weiter",
+      playerDefault:function(i){return "Spieler "+i;},
+      prRounds:function(s,r){return s+" s · "+r+" Runden";}, prBlitz:"Blitz 20 s",
+      voiceUsing:function(n){return "Stimme: "+n;}, voiceNone:"Keine Sprachstimme auf diesem Gerät verfügbar",
+      bcp:"de-DE", num:numDe,
+      sp:{
+        full:{
+          start:function(name){return "Runde eins. "+name+", du fängst an!";},
+          turn:function(name){return name+", du bist dran!";},
+          lastTurn:function(name){return name+", letzter Zug der Runde!";},
+          brk:"Pause. Kurz durchatmen.",
+          half:"Halbzeit der Pause.",
+          newRound:function(r,name){return "Weiter geht's! Runde "+numDe(r)+". "+name+", du beginnst!";},
+          finish:"Das war's, alle Runden geschafft. Stark gemacht!",
+          test:"Der Ton funktioniert."
+        },
+        min:{
+          start:"Los!",
+          turn:"Wechsel!",
+          lastTurn:"Letzter!",
+          brk:"Pause.",
+          half:"Halbzeit.",
+          newRound:function(r){return "Runde "+numDe(r)+". Los!";},
+          finish:"Fertig!",
+          test:"Okay."
+        }
+      },
+      nums:["","eins","zwei","drei"],
+      prefVoices:["Anna","Petra","Helena","Viktor","Markus","Google Deutsch","Katja","Amala","Conrad"]
+    }
   };
-  var CIRC = 282.74;
+
+  // ---------- Config (im Speicher) ----------
+  var cfg = { lang:"en", secs:30, rounds:3, brk:60, count:4, voice:true, spMode:"full",
+              vib:true, wake:true, vol:0.8, names:[] };
+  function L(){ return T[cfg.lang]; }
+  for(var i=1;i<=4;i++) cfg.names.push(L().playerDefault(i));
+
+  // Ansage-Helfer: wählt je nach Modus die passende Formulierung
+  function ph(key,name,r){
+    var s=L().sp[cfg.spMode][key];
+    if(typeof s==="function") return cfg.spMode==="full" ? s(r!==undefined?r:name, r!==undefined?name:undefined) : s(r);
+    return s;
+  }
+  // Klarere Variante ohne Argument-Jonglage:
+  function phrase(key,args){
+    args=args||{};
+    var mode=L().sp[cfg.spMode], s=mode[key];
+    if(typeof s!=="function") return s;
+    if(key==="newRound") return cfg.spMode==="full" ? s(args.round,args.name) : s(args.round);
+    return s(args.name);
+  }
+
+  var $=function(id){return document.getElementById(id);};
+  var el={round:$("roundInfo"),badge:$("phaseBadge"),player:$("playerName"),time:$("timeDisp"),
+    ring:$("ring"),prog:$("progCircle"),next:$("nextUp"),start:$("startBtn"),reset:$("resetBtn"),test:$("testBtn"),
+    sheet:$("sheet"),gear:$("gearBtn"),close:$("closeBtn"),fs:$("fsBtn"),
+    cLang:$("cfgLang"),cSecs:$("cfgSecs"),cRounds:$("cfgRounds"),cBrk:$("cfgBreak"),cCount:$("cfgCount"),
+    cVoice:$("cfgVoice"),cSpMode:$("cfgSpMode"),cVib:$("cfgVib"),cWake:$("cfgWake"),cVol:$("cfgVol"),
+    nameList:$("nameList"),vInfo:$("voiceInfo")};
+  var CIRC=282.74;
 
   // ---------- Audio ----------
-  var ctx=null, master=null;
+  var ctx=null,master=null;
   function ensureAudio(){
-    if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)();
-      master=ctx.createGain(); master.connect(ctx.destination); }
-    if(ctx.state==="suspended") ctx.resume();
-    master.gain.value = cfg.vol;
+    if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();
+      master=ctx.createGain();master.connect(ctx.destination);}
+    if(ctx.state==="suspended")ctx.resume();
+    master.gain.value=cfg.vol;
   }
   function tone(f,t,d,type){
-    var o=ctx.createOscillator(), g=ctx.createGain();
-    o.type=type||"sine"; o.frequency.value=f;
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type||"sine";o.frequency.value=f;
     g.gain.setValueAtTime(0.0001,t);
     g.gain.exponentialRampToValueAtTime(1,t+0.015);
     g.gain.exponentialRampToValueAtTime(0.0001,t+d);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t+d+0.05);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+d+0.05);
   }
-  function beepTurn(){ ensureAudio(); tone(880,ctx.currentTime+0.03,0.22,"square"); vib(120); }
-  function beepRoundEnd(){ ensureAudio(); var t=ctx.currentTime+0.03; tone(440,t,0.25,"square"); tone(440,t+0.35,0.4,"square"); vib([150,100,150]); }
-  function beepFinish(){ ensureAudio(); var t=ctx.currentTime+0.03; [660,880,1100].forEach(function(f,i){ tone(f,t+i*0.28,0.24,"triangle"); }); vib([200,100,200,100,300]); }
-  function vib(p){ if(cfg.vib && navigator.vibrate) try{navigator.vibrate(p);}catch(e){} }
+  function beepTurn(){ensureAudio();tone(880,ctx.currentTime+0.03,0.22,"square");vib(120);}
+  function beepRoundEnd(){ensureAudio();var t=ctx.currentTime+0.03;tone(440,t,0.25,"square");tone(440,t+0.35,0.4,"square");vib([150,100,150]);}
+  function beepFinish(){ensureAudio();var t=ctx.currentTime+0.03;[660,880,1100].forEach(function(f,i){tone(f,t+i*0.28,0.24,"triangle");});vib([200,100,200,100,300]);}
+  function vib(p){if(cfg.vib&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 
-  // ---------- Sprache ----------
-  var voiceDE=null;
-  function pickVoice(){
-    var vs=window.speechSynthesis?window.speechSynthesis.getVoices():[];
-    for(var i=0;i<vs.length;i++) if(vs[i].lang&&vs[i].lang.indexOf("de")===0){voiceDE=vs[i];break;}
+  // ---------- Sprachausgabe ----------
+  // Punktesystem: Premium-/Enhanced-Stimmen zuerst, dann bekannte gute Namen,
+  // dann Cloud-Stimmen, dann exakte Sprachregion. Läuft rein clientseitig –
+  // funktioniert damit unverändert auch auf GitHub Pages.
+  var chosenVoice=null, voicesReady=false;
+  function scoreVoice(v){
+    var t=L(), s=0, name=v.name||"", lang=v.lang||"";
+    if(lang.indexOf(t.bcp.slice(0,2))!==0) return -1;           // falsche Sprache
+    if(/premium|enhanced|natural|neural|siri/i.test(name)) s+=10;
+    for(var p=0;p<t.prefVoices.length;p++){
+      if(name.indexOf(t.prefVoices[p])>=0){ s+=8-Math.min(p,6); break; }
+    }
+    if(v.localService===false) s+=4;                             // Cloud-Stimme
+    if(lang===t.bcp||lang.replace("_","-")===t.bcp) s+=3;        // exakte Region
+    if(/compact/i.test(name)) s-=5;                              // Billig-Variante meiden
+    return s;
   }
-  if(window.speechSynthesis){ pickVoice(); window.speechSynthesis.onvoiceschanged=pickVoice; }
-  function speak(txt){
-    if(!cfg.voice||!window.speechSynthesis) return;
+  function pickVoice(){
+    chosenVoice=null;
+    if(!window.speechSynthesis) { updVoiceInfo(); return; }
+    var vs=window.speechSynthesis.getVoices();
+    if(vs.length) voicesReady=true;
+    var best=-1;
+    for(var i=0;i<vs.length;i++){
+      var sc=scoreVoice(vs[i]);
+      if(sc>best){best=sc;chosenVoice=vs[i];}
+    }
+    updVoiceInfo();
+  }
+  function updVoiceInfo(){
+    var t=L();
+    el.vInfo.textContent = chosenVoice ? t.voiceUsing(chosenVoice.name)
+                         : (window.speechSynthesis?"":t.voiceNone);
+  }
+  if(window.speechSynthesis){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged=pickVoice;
+  }
+
+  // Chrome-Bug-Workaround: Desktop-Chrome pausiert lange Ansagen nach ~15 s.
+  var keepAliveId=null;
+  function keepAlive(on){
+    if(on&&!keepAliveId){
+      keepAliveId=setInterval(function(){
+        if(window.speechSynthesis&&window.speechSynthesis.speaking){
+          window.speechSynthesis.pause();window.speechSynthesis.resume();
+        }
+      },10000);
+    } else if(!on&&keepAliveId){clearInterval(keepAliveId);keepAliveId=null;}
+  }
+
+  function speak(txt,opts){
+    if(!cfg.voice||!window.speechSynthesis||!txt)return;
+    opts=opts||{};
     try{
+      if(opts.interrupt!==false)window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
       var u=new SpeechSynthesisUtterance(txt);
-      u.lang="de-DE"; if(voiceDE) u.voice=voiceDE; u.volume=cfg.vol;
+      u.lang=L().bcp;
+      if(chosenVoice)u.voice=chosenVoice;
+      u.volume=Math.min(1,cfg.vol+0.1);
+      // Minimal-Ansagen etwas knackiger, ausführliche Ansagen ruhiger
+      u.rate=opts.rate||(cfg.spMode==="min"?1.08:(cfg.lang==="de"?0.98:1.02));
+      u.pitch=1.0;
+      u.onend=function(){keepAlive(false);};
+      keepAlive(true);
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
+  function speakAfterBeep(txt){setTimeout(function(){speak(txt);},380);}
   function primeSpeech(){
-    if(!window.speechSynthesis) return;
-    try{ window.speechSynthesis.cancel(); window.speechSynthesis.resume();
-      var u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); }catch(e){}
+    if(!window.speechSynthesis)return;
+    try{window.speechSynthesis.cancel();window.speechSynthesis.resume();
+      var u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang=L().bcp;window.speechSynthesis.speak(u);
+      if(!voicesReady)setTimeout(pickVoice,300);   // iOS lädt Stimmen erst nach erster Nutzung
+    }catch(e){}
   }
 
   // ---------- Wake Lock ----------
   var wakeLock=null;
   function reqWake(){
-    if(!cfg.wake||!("wakeLock" in navigator)) return;
+    if(!cfg.wake||!("wakeLock" in navigator))return;
     navigator.wakeLock.request("screen").then(function(w){wakeLock=w;}).catch(function(){});
   }
-  function relWake(){ if(wakeLock){ wakeLock.release().catch(function(){}); wakeLock=null; } }
+  function relWake(){if(wakeLock){wakeLock.release().catch(function(){});wakeLock=null;}}
   document.addEventListener("visibilitychange",function(){
-    if(document.visibilityState==="visible" && running) reqWake();
+    if(document.visibilityState==="visible"&&running)reqWake();
   });
 
-  // ---------- Zustand ----------
-  var running=false, paused=false, phase="idle";
-  var round=1, playerIdx=0, remaining=cfg.secs, total=cfg.secs;
-  var timerId=null, lastTick=0, spokenMarks={};
+  // ---------- State ----------
+  var running=false,paused=false,phase="idle";
+  var round=1,playerIdx=0,remaining=cfg.secs,total=cfg.secs;
+  var timerId=null,lastTick=0,spokenMarks={};
 
-  function fmt(s){ s=Math.max(0,Math.ceil(s)); var m=Math.floor(s/60); return m+":"+("0"+(s%60)).slice(-2); }
+  function fmt(s){s=Math.max(0,Math.ceil(s));var m=Math.floor(s/60);return m+":"+("0"+(s%60)).slice(-2);}
+  function esc(s){return String(s).replace(/[<>&]/g,function(c){return{"<":"&lt;",">":"&gt;","&":"&amp;"}[c];});}
 
   function render(){
+    var t=L();
     el.time.textContent=fmt(remaining);
-    var frac= total>0 ? remaining/total : 0;
-    el.prog.setAttribute("stroke-dashoffset", String(CIRC*(1-frac)));
-    el.ring.classList.toggle("break", phase==="break");
-    el.ring.classList.toggle("low", phase==="turn" && remaining<=5);
+    var frac=total>0?remaining/total:0;
+    el.prog.setAttribute("stroke-dashoffset",String(CIRC*(1-frac)));
+    el.ring.classList.toggle("break",phase==="break");
+    el.ring.classList.toggle("low",phase==="turn"&&remaining<=5);
     el.badge.className="phase "+(phase==="turn"?"turn":phase==="break"?"break":phase==="done"?"done":"idle");
-    if(phase==="idle"){ el.badge.textContent="Warte auf Start"; el.round.textContent="Bereit";
-      el.player.textContent="–"; el.next.innerHTML="&nbsp;"; }
-    else if(phase==="turn"){ el.badge.textContent="Am Zug"; el.round.textContent="Runde "+round+" / "+cfg.rounds;
+    if(phase==="idle"){el.badge.textContent=t.waiting;el.round.textContent=t.ready;
+      el.player.textContent="–";el.next.innerHTML="&nbsp;";}
+    else if(phase==="turn"){el.badge.textContent=t.active;el.round.textContent=t.roundOf(round,cfg.rounds);
       el.player.textContent=cfg.names[playerIdx];
-      var nx = playerIdx+1<cfg.count ? "Danach: <b>"+esc(cfg.names[playerIdx+1])+"</b>"
-             : (round<cfg.rounds||cfg.brk>0 ? "Danach: <b>Pause</b>" : "Letzter Zug");
-      el.next.innerHTML=nx; }
-    else if(phase==="break"){ el.badge.textContent="Pause"; el.round.textContent="Runde "+round+" beendet";
-      el.player.textContent="☕ Pause";
-      el.next.innerHTML= round<cfg.rounds ? "Danach: <b>Runde "+(round+1)+"</b>" : "Danach: <b>Ende</b>"; }
-    else if(phase==="done"){ el.badge.textContent="Fertig 🎉"; el.round.textContent=cfg.rounds+" Runden gespielt";
-      el.player.textContent="Geschafft!"; el.next.innerHTML="&nbsp;"; }
-    el.start.textContent = running ? (paused?"Weiter":"Pause") : "Start";
-    el.start.classList.toggle("primary", !running||paused);
-    el.start.classList.toggle("stop", running&&!paused);
+      var nx=playerIdx+1<cfg.count?t.nextP(esc(cfg.names[playerIdx+1]))
+        :(round<cfg.rounds&&cfg.brk>0?t.nextBreak:round<cfg.rounds?t.nextRound(round+1):t.lastTurn);
+      el.next.innerHTML=nx;}
+    else if(phase==="break"){el.badge.textContent=t.pause;el.round.textContent=t.roundDone(round);
+      el.player.textContent=t.breakLabel;
+      el.next.innerHTML=round<cfg.rounds?t.nextRound(round+1):t.nextEnd;}
+    else if(phase==="done"){el.badge.textContent=t.finished;el.round.textContent=t.allDone(cfg.rounds);
+      el.player.textContent=t.congrats;el.next.innerHTML="&nbsp;";}
+    el.start.textContent=running?(paused?t.resume:t.pauseBtn):t.start;
+    el.start.classList.toggle("primary",!running||paused);
+    el.start.classList.toggle("stop",running&&!paused);
   }
-  function esc(s){ return String(s).replace(/[<>&]/g,function(c){return{"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}); }
+
+  function applyLang(){
+    var t=L();
+    document.documentElement.lang=cfg.lang;
+    $("uiTitle").textContent=t.title;$("uiSettings").textContent=t.settings;$("uiLang").textContent=t.lang;
+    $("uiPresets").textContent=t.presets;$("uiTimer").textContent=t.timer;$("uiSecs").textContent=t.secs;
+    $("uiRounds").textContent=t.rounds;$("uiBreak").textContent=t.brk;$("uiPlayers").textContent=t.players;
+    $("uiCount").textContent=t.count;$("uiSignals").textContent=t.signals;$("uiVoice").textContent=t.voice;
+    $("uiSpMode").textContent=t.spMode;
+    el.cSpMode.options[0].textContent=t.spFull;
+    el.cSpMode.options[1].textContent=t.spMin;
+    $("uiVib").textContent=t.vib;$("uiWake").textContent=t.wake;$("uiVol").textContent=t.vol;
+    $("closeBtn").textContent=t.done;$("uiHint").textContent=t.hint;
+    $("pr1").textContent=t.prRounds(30,3);$("pr2").textContent=t.prRounds(60,3);
+    $("pr3").textContent=t.prRounds(45,5);$("pr4").textContent=t.prBlitz;
+    document.title=t.title.replace("⏱ ","");
+    var other=cfg.lang==="de"?T.en:T.de;
+    for(var i=0;i<cfg.names.length;i++){
+      if(cfg.names[i]===other.playerDefault(i+1))cfg.names[i]=t.playerDefault(i+1);
+    }
+    buildNames();pickVoice();render();
+  }
 
   function flash(kind){
     document.body.classList.add("flash-"+kind);
-    setTimeout(function(){ document.body.classList.remove("flash-"+kind); },450);
+    setTimeout(function(){document.body.classList.remove("flash-"+kind);},450);
   }
 
-  function startPhaseTurn(){
-    phase="turn"; remaining=cfg.secs; total=cfg.secs; spokenMarks={};
-    render();
-  }
+  function startPhaseTurn(){phase="turn";remaining=cfg.secs;total=cfg.secs;spokenMarks={};render();}
   function startPhaseBreak(){
-    phase="break"; remaining=cfg.brk; total=cfg.brk; spokenMarks={};
-    flash("break"); speak("Pause");
-    render();
+    phase="break";remaining=cfg.brk;total=cfg.brk;spokenMarks={};
+    flash("break");speakAfterBeep(phrase("brk"));render();
   }
 
   function advance(){
     if(phase==="turn"){
-      if(playerIdx+1 < cfg.count){
-        playerIdx++; beepTurn(); flash("turn");
-        speak(cfg.names[playerIdx]); startPhaseTurn();
-      } else {
-        beepRoundEnd(); flash("end");
-        if(round < cfg.rounds){
-          if(cfg.brk>0){ startPhaseBreak(); }
-          else { round++; playerIdx=0; speak("Runde "+round); startPhaseTurn(); }
-        } else if(cfg.brk>0 && false){ /* nie Pause nach letzter Runde */ }
-        else { finish(); }
+      if(playerIdx+1<cfg.count){
+        playerIdx++;beepTurn();flash("turn");
+        var isLast=(playerIdx===cfg.count-1);
+        speakAfterBeep(phrase(isLast?"lastTurn":"turn",{name:cfg.names[playerIdx]}));
+        startPhaseTurn();
+      }else{
+        beepRoundEnd();flash("end");
+        if(round<cfg.rounds){
+          if(cfg.brk>0){startPhaseBreak();}
+          else{round++;playerIdx=0;
+            speakAfterBeep(phrase("newRound",{round:round,name:cfg.names[0]}));startPhaseTurn();}
+        }else{finish();}
       }
-    } else if(phase==="break"){
-      round++; playerIdx=0; beepTurn(); flash("turn");
-      speak("Runde "+round+". "+cfg.names[0]); startPhaseTurn();
+    }else if(phase==="break"){
+      round++;playerIdx=0;beepTurn();flash("turn");
+      speakAfterBeep(phrase("newRound",{round:round,name:cfg.names[0]}));startPhaseTurn();
     }
   }
 
   function finish(){
-    phase="done"; running=false; paused=false;
-    clearInterval(timerId); timerId=null; relWake();
-    beepFinish(); speak("Alle Runden geschafft. Gut gemacht!");
-    remaining=0; total=1; render();
+    phase="done";running=false;paused=false;
+    clearInterval(timerId);timerId=null;relWake();
+    beepFinish();setTimeout(function(){speak(phrase("finish"));},900);
+    remaining=0;total=1;render();
   }
 
   function tick(){
-    var now=performance.now(), dt=(now-lastTick)/1000; lastTick=now;
-    if(paused) return;
+    var now=performance.now(),dt=(now-lastTick)/1000;lastTick=now;
+    if(paused)return;
     remaining-=dt;
-    // Sprachmarken
+    var t=L();
     if(phase==="break"){
       var half=Math.floor(cfg.brk/2);
-      if(cfg.brk>=20 && remaining<=half && !spokenMarks.half){ spokenMarks.half=1; speak("Halbzeit"); }
-      [3,2,1].forEach(function(n){
-        if(remaining<=n && !spokenMarks["c"+n]){ spokenMarks["c"+n]=1; speak(String(n)); }
-      });
+      if(cfg.brk>=20&&remaining<=half&&!spokenMarks.half){spokenMarks.half=1;speak(phrase("half"));}
+      for(var n=3;n>=1;n--){
+        if(remaining<=n&&!spokenMarks["c"+n]){spokenMarks["c"+n]=1;speak(t.nums[n],{interrupt:true,rate:1.0});}
+      }
     }
-    if(phase==="turn" && remaining<=3 && !spokenMarks.warn && cfg.secs>=15){
-      spokenMarks.warn=1; ensureAudio(); tone(660,ctx.currentTime+0.02,0.1,"sine");
+    if(phase==="turn"&&remaining<=3&&!spokenMarks.warn&&cfg.secs>=15){
+      spokenMarks.warn=1;ensureAudio();tone(660,ctx.currentTime+0.02,0.1,"sine");
     }
-    if(remaining<=0){ advance(); if(!running) return; }
+    if(remaining<=0){advance();if(!running)return;}
     render();
   }
 
-  // ---------- Steuerung ----------
+  // ---------- Controls ----------
   el.start.addEventListener("click",function(){
-    ensureAudio(); primeSpeech();
+    ensureAudio();primeSpeech();
     if(!running){
       readCfg();
-      running=true; paused=false; round=1; playerIdx=0;
-      startPhaseTurn(); beepTurn(); flash("turn");
-      speak("Runde 1. "+cfg.names[0]);
+      running=true;paused=false;round=1;playerIdx=0;
+      startPhaseTurn();beepTurn();flash("turn");
+      speakAfterBeep(phrase("start",{name:cfg.names[0]}));
       lastTick=performance.now();
       timerId=setInterval(tick,100);
       reqWake();
-    } else if(paused){ paused=false; lastTick=performance.now(); reqWake(); }
-    else { paused=true; relWake(); }
+    }else if(paused){paused=false;lastTick=performance.now();reqWake();}
+    else{paused=true;relWake();}
     render();
   });
   el.reset.addEventListener("click",function(){
-    running=false; paused=false; phase="idle";
-    clearInterval(timerId); timerId=null; relWake();
-    if(window.speechSynthesis) window.speechSynthesis.cancel();
-    readCfg(); remaining=cfg.secs; total=cfg.secs; render();
+    running=false;paused=false;phase="idle";
+    clearInterval(timerId);timerId=null;relWake();keepAlive(false);
+    if(window.speechSynthesis)window.speechSynthesis.cancel();
+    readCfg();remaining=cfg.secs;total=cfg.secs;render();
   });
   el.test.addEventListener("click",function(){
-    ensureAudio(); primeSpeech(); beepTurn(); flash("turn"); speak("Ton funktioniert");
+    ensureAudio();primeSpeech();beepTurn();flash("turn");
+    setTimeout(function(){speak(phrase("test"));},380);
   });
 
-  // ---------- Einstellungen ----------
+  // ---------- Settings ----------
   function buildNames(){
     el.nameList.innerHTML="";
     for(var i=0;i<cfg.count;i++){
       var inp=document.createElement("input");
-      inp.type="text"; inp.value=cfg.names[i]||("Spieler "+(i+1)); inp.dataset.i=i;
-      inp.addEventListener("input",function(){ cfg.names[this.dataset.i]=this.value||("Spieler "+(1+ +this.dataset.i)); if(!running)render(); });
+      inp.type="text";inp.value=cfg.names[i]||L().playerDefault(i+1);inp.dataset.i=i;
+      inp.addEventListener("input",function(){
+        cfg.names[this.dataset.i]=this.value||L().playerDefault(1+ +this.dataset.i);
+        if(!running)render();
+      });
       el.nameList.appendChild(inp);
     }
   }
   function readCfg(){
-    cfg.secs = clamp(el.cSecs.value,5,600,30);
-    cfg.rounds = clamp(el.cRounds.value,1,50,3);
-    cfg.brk = clamp(el.cBrk.value,0,600,60);
-    var n = clamp(el.cCount.value,1,12,4);
-    if(n!==cfg.count){ cfg.count=n;
-      while(cfg.names.length<n) cfg.names.push("Spieler "+(cfg.names.length+1));
-      buildNames(); }
-    cfg.voice=el.cVoice.checked; cfg.vib=el.cVib.checked; cfg.wake=el.cWake.checked;
-    cfg.vol=el.cVol.value/100; if(master) master.gain.value=cfg.vol;
+    cfg.secs=clamp(el.cSecs.value,5,600,30);
+    cfg.rounds=clamp(el.cRounds.value,1,50,3);
+    cfg.brk=clamp(el.cBrk.value,0,600,60);
+    var n=clamp(el.cCount.value,1,12,4);
+    if(n!==cfg.count){cfg.count=n;
+      while(cfg.names.length<n)cfg.names.push(L().playerDefault(cfg.names.length+1));
+      buildNames();}
+    cfg.voice=el.cVoice.checked;
+    cfg.spMode=el.cSpMode.value;
+    cfg.vib=el.cVib.checked;cfg.wake=el.cWake.checked;
+    cfg.vol=el.cVol.value/100;if(master)master.gain.value=cfg.vol;
   }
-  function clamp(v,min,max,d){ v=parseInt(v,10); if(isNaN(v))return d; return Math.min(max,Math.max(min,v)); }
+  function clamp(v,min,max,d){v=parseInt(v,10);if(isNaN(v))return d;return Math.min(max,Math.max(min,v));}
 
-  el.gear.addEventListener("click",function(){ el.sheet.classList.add("open"); });
-  el.close.addEventListener("click",function(){ el.sheet.classList.remove("open"); readCfg(); if(!running){remaining=cfg.secs;total=cfg.secs;render();} });
-  el.sheet.addEventListener("click",function(e){ if(e.target===el.sheet){ el.close.click(); } });
+  el.cLang.addEventListener("change",function(){cfg.lang=this.value;applyLang();});
+  el.cSpMode.addEventListener("change",readCfg);
+  el.gear.addEventListener("click",function(){el.sheet.classList.add("open");});
+  el.close.addEventListener("click",function(){el.sheet.classList.remove("open");readCfg();
+    if(!running){remaining=cfg.secs;total=cfg.secs;render();}});
+  el.sheet.addEventListener("click",function(e){if(e.target===el.sheet){el.close.click();}});
   el.cCount.addEventListener("change",readCfg);
 
   document.querySelectorAll(".preset").forEach(function(p){
     p.addEventListener("click",function(){
       var v=this.dataset.p.split(",");
-      el.cSecs.value=v[0]; el.cRounds.value=v[1]; el.cBrk.value=v[2];
-      readCfg(); if(!running){remaining=cfg.secs;total=cfg.secs;render();}
+      el.cSecs.value=v[0];el.cRounds.value=v[1];el.cBrk.value=v[2];
+      readCfg();if(!running){remaining=cfg.secs;total=cfg.secs;render();}
     });
   });
 
-  // ---------- Vollbild ----------
   el.fs.addEventListener("click",function(){
     var d=document.documentElement;
-    if(!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(function(){});
-    else if(document.exitFullscreen) document.exitFullscreen();
+    if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(function(){});
+    else if(document.exitFullscreen)document.exitFullscreen();
   });
 
-  buildNames(); render();
+  buildNames();applyLang();
 })();
 </script>
 </body>
