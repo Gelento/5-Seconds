@@ -65,17 +65,17 @@
   .panel h2{font-size:18px;margin-bottom:6px}
   .panel h3{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
-  .row label{font-size:15px}
+  .row label.txt{font-size:15px}
   .row input[type=number]{width:76px;padding:8px;border-radius:8px;border:1px solid var(--line);
     background:var(--card2);color:var(--txt);font-size:16px;text-align:center}
   .row input[type=range]{width:130px;accent-color:var(--acc)}
   .row select{padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;max-width:180px}
-  .switch{position:relative;width:50px;height:29px;flex:0 0 auto}
-  .switch input{opacity:0;width:0;height:0}
-  .slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:29px;cursor:pointer;transition:.2s}
+  .switch{position:relative;display:inline-block;width:50px;height:29px;flex:0 0 auto;cursor:pointer}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;left:0;top:0;margin:0;cursor:pointer}
+  .slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:29px;transition:.2s;pointer-events:none}
   .slider:before{content:"";position:absolute;height:23px;width:23px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
-  .switch input:checked + .slider{background:var(--ok);border-color:var(--ok)}
-  .switch input:checked + .slider:before{transform:translateX(21px)}
+  .switch input:checked ~ .slider{background:var(--ok);border-color:var(--ok)}
+  .switch input:checked ~ .slider:before{transform:translateX(21px)}
   .names{display:flex;flex-direction:column;gap:8px;margin-top:6px}
   .names input{padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:16px}
   .preset{display:inline-block;margin:4px 6px 4px 0;padding:8px 14px;border-radius:20px;background:var(--card2);
@@ -91,8 +91,8 @@
 <header>
   <h1 id="uiTitle">⏱ Round Timer</h1>
   <div class="hbtns">
-    <button class="icobtn" id="fsBtn" title="Fullscreen">⛶</button>
-    <button class="icobtn" id="gearBtn" title="Settings">⚙︎</button>
+    <button type="button" class="icobtn" id="fsBtn" title="Fullscreen">⛶</button>
+    <button type="button" class="icobtn" id="gearBtn" title="Settings">⚙︎</button>
   </div>
 </header>
 
@@ -112,9 +112,9 @@
 </main>
 
 <div class="controls">
-  <button class="btn small" id="testBtn">🔊 Test</button>
-  <button class="btn primary" id="startBtn">Start</button>
-  <button class="btn small" id="resetBtn">↺</button>
+  <button type="button" class="btn small" id="testBtn">🔊 Test</button>
+  <button type="button" class="btn primary" id="startBtn">Start</button>
+  <button type="button" class="btn small" id="resetBtn">↺</button>
 </div>
 
 <!-- Settings -->
@@ -123,7 +123,7 @@
     <h2 id="uiSettings">Settings</h2>
 
     <div class="row" style="border-bottom:none;padding-top:4px">
-      <label id="uiLang">Language</label>
+      <label class="txt" id="uiLang">Language</label>
       <select id="cfgLang">
         <option value="en" selected>English</option>
         <option value="de">Deutsch</option>
@@ -139,34 +139,34 @@
     </div>
 
     <h3 id="uiTimer">Timer</h3>
-    <div class="row"><label id="uiSecs">Seconds per player</label><input type="number" id="cfgSecs" min="5" max="600" value="30"></div>
-    <div class="row"><label id="uiRounds">Rounds</label><input type="number" id="cfgRounds" min="1" max="50" value="3"></div>
-    <div class="row"><label id="uiBreak">Break (seconds)</label><input type="number" id="cfgBreak" min="0" max="600" value="60"></div>
+    <div class="row"><label class="txt" id="uiSecs">Seconds per player</label><input type="number" id="cfgSecs" min="5" max="600" value="30"></div>
+    <div class="row"><label class="txt" id="uiRounds">Rounds</label><input type="number" id="cfgRounds" min="1" max="50" value="3"></div>
+    <div class="row"><label class="txt" id="uiBreak">Break (seconds)</label><input type="number" id="cfgBreak" min="0" max="600" value="60"></div>
 
     <h3 id="uiPlayers">Players</h3>
-    <div class="row"><label id="uiCount">Count</label><input type="number" id="cfgCount" min="1" max="12" value="4"></div>
+    <div class="row"><label class="txt" id="uiCount">Count</label><input type="number" id="cfgCount" min="1" max="12" value="4"></div>
     <div class="names" id="nameList"></div>
 
     <h3 id="uiSignals">Signals</h3>
-    <div class="row"><label id="uiVoice">Voice announcements</label>
-      <span class="switch"><input type="checkbox" id="cfgVoice" checked><span class="slider"></span></span></div>
-    <div class="row"><label id="uiSpMode">Announcement style</label>
+    <div class="row"><label class="txt" for="cfgVoice" id="uiVoice">Voice announcements</label>
+      <label class="switch"><input type="checkbox" id="cfgVoice" checked><span class="slider"></span></label></div>
+    <div class="row"><label class="txt" id="uiSpMode">Announcement style</label>
       <select id="cfgSpMode">
         <option value="full" selected>Full (with names)</option>
         <option value="min">Minimal</option>
       </select></div>
-    <div class="row"><label id="uiVoiceSel">Voice</label>
+    <div class="row"><label class="txt" id="uiVoiceSel">Voice</label>
       <select id="cfgVoiceSel">
         <option value="auto" selected>Automatic</option>
       </select></div>
-    <div class="row"><label id="uiVib">Vibration</label>
-      <span class="switch"><input type="checkbox" id="cfgVib" checked><span class="slider"></span></span></div>
-    <div class="row"><label id="uiWake">Keep screen awake</label>
-      <span class="switch"><input type="checkbox" id="cfgWake" checked><span class="slider"></span></span></div>
-    <div class="row"><label id="uiVol">Volume</label><input type="range" id="cfgVol" min="0" max="100" value="80"></div>
+    <div class="row"><label class="txt" for="cfgVib" id="uiVib">Vibration</label>
+      <label class="switch"><input type="checkbox" id="cfgVib" checked><span class="slider"></span></label></div>
+    <div class="row"><label class="txt" for="cfgWake" id="uiWake">Keep screen awake</label>
+      <label class="switch"><input type="checkbox" id="cfgWake" checked><span class="slider"></span></label></div>
+    <div class="row"><label class="txt" id="uiVol">Volume</label><input type="range" id="cfgVol" min="0" max="100" value="80"></div>
     <div class="voiceinfo" id="voiceInfo"></div>
 
-    <button class="closebtn" id="closeBtn">Done</button>
+    <button type="button" class="closebtn" id="closeBtn">Done</button>
     <div class="hint" id="uiHint">iPhone tip: set the side switch to ring mode and tap "Test" once so iOS unlocks audio and speech. "Keep screen awake" prevents the screen from locking while the timer runs.</div>
   </div>
 </div>
@@ -184,7 +184,7 @@
       timer:"Timer", secs:"Seconds per player", rounds:"Rounds", brk:"Break (seconds)",
       players:"Players", count:"Count", signals:"Signals", voice:"Voice announcements",
       spMode:"Announcement style", spFull:"Full (with names)", spMin:"Minimal",
-      voiceSel:"Voice", autoVoice:"Automatic",
+      voiceSel:"Voice", autoVoice:"Automatic (system default)",
       vib:"Vibration", wake:"Keep screen awake", vol:"Volume", done:"Done",
       hint:"iPhone tip: set the side switch to ring mode and tap \"Test\" once so iOS unlocks audio and speech. \"Keep screen awake\" prevents the screen from locking while the timer runs.",
       ready:"Ready", waiting:"Waiting to start", active:"Your turn", pause:"Break", finished:"Done 🎉",
@@ -222,15 +222,14 @@
           test:"Okay."
         }
       },
-      nums:["","one","two","three"],
-      prefVoices:["Samantha","Ava","Allison","Zoe","Daniel","Google US English","Google UK English Female","Aria","Jenny","Libby"]
+      nums:["","one","two","three"]
     },
     de: {
       title:"⏱ Runden-Timer", settings:"Einstellungen", lang:"Sprache", presets:"Schnell-Presets",
       timer:"Timer", secs:"Sekunden pro Spieler", rounds:"Runden", brk:"Pause (Sekunden)",
       players:"Spieler", count:"Anzahl", signals:"Signale", voice:"Sprachansagen",
       spMode:"Ansagen-Stil", spFull:"Ausführlich (mit Namen)", spMin:"Minimal",
-      voiceSel:"Stimme", autoVoice:"Automatisch",
+      voiceSel:"Stimme", autoVoice:"Automatisch (System-Standard)",
       vib:"Vibration", wake:"Display wachhalten", vol:"Lautstärke", done:"Fertig",
       hint:"iPhone-Tipp: Seitenschalter auf Ton stellen und einmal „Test“ tippen, damit iOS Audio und Sprache freigibt. „Display wachhalten“ verhindert die Bildschirmsperre, solange der Timer läuft.",
       ready:"Bereit", waiting:"Warte auf Start", active:"Am Zug", pause:"Pause", finished:"Fertig 🎉",
@@ -268,8 +267,7 @@
           test:"Okay."
         }
       },
-      nums:["","eins","zwei","drei"],
-      prefVoices:["Anna","Petra","Helena","Viktor","Markus","Google Deutsch","Katja","Amala","Conrad"]
+      nums:["","eins","zwei","drei"]
     }
   };
 
@@ -319,10 +317,11 @@
   function vib(p){if(cfg.vib&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 
   // ---------- Sprachausgabe ----------
-  // Auto-Priorisierung: 1. Cloud-Stimmen, 2. Premium/Enhanced, 3. bekannte gute
-  // Namen, 4. exakte Sprachregion. Alternativ manuelle Wahl über das Dropdown.
+  // Automatik = Verhalten der allerersten Version: die erste Stimme, die das
+  // System für die Sprache meldet (= System-Standardstimme, auch auf iOS).
+  // Über das Dropdown kann jederzeit manuell eine andere gewählt werden.
   // Alles rein clientseitig (Web Speech API) – läuft unverändert auf GitHub Pages.
-  var chosenVoice=null, voicesReady=false;
+  var chosenVoice=null;
   function langVoices(){
     if(!window.speechSynthesis) return [];
     var pre=L().bcp.slice(0,2);
@@ -330,35 +329,18 @@
       return v.lang && v.lang.replace("_","-").indexOf(pre)===0;
     });
   }
-  function scoreVoice(v){
-    var t=L(), s=0, name=v.name||"", lang=(v.lang||"").replace("_","-");
-    if(v.localService===false) s+=14;                            // Cloud-Stimme zuerst
-    if(/premium|enhanced|natural|neural|siri/i.test(name)) s+=10;
-    for(var p=0;p<t.prefVoices.length;p++){
-      if(name.indexOf(t.prefVoices[p])>=0){ s+=8-Math.min(p,6); break; }
-    }
-    if(lang===t.bcp) s+=3;                                       // exakte Region
-    if(/compact/i.test(name)) s-=5;                              // Billig-Variante meiden
-    return s;
-  }
   function resolveVoice(){
     chosenVoice=null;
     var vs=langVoices();
-    if(vs.length) voicesReady=true;
-    // Manuelle Auswahl?
     if(cfg.voiceName!=="auto"){
       for(var i=0;i<vs.length;i++){
         if(vs[i].name===cfg.voiceName){chosenVoice=vs[i];updVoiceInfo();return;}
       }
-      cfg.voiceName="auto";                                      // Stimme weg → zurück auf Auto
-      el.cVoiceSel.value="auto";
+      cfg.voiceName="auto";
+      if(el.cVoiceSel)el.cVoiceSel.value="auto";
     }
-    // Auto: beste Stimme per Punktesystem
-    var best=-1;
-    for(i=0;i<vs.length;i++){
-      var sc=scoreVoice(vs[i]);
-      if(sc>best){best=sc;chosenVoice=vs[i];}
-    }
+    // Auto: erste gemeldete Stimme der Sprache (wie in Version 1)
+    if(vs.length)chosenVoice=vs[0];
     updVoiceInfo();
   }
   function populateVoiceSel(){
@@ -367,11 +349,7 @@
     var opt=document.createElement("option");
     opt.value="auto";opt.textContent=t.autoVoice;
     el.cVoiceSel.appendChild(opt);
-    // Cloud-Stimmen im Dropdown zuerst, dann Rest – jeweils alphabetisch
-    vs.sort(function(a,b){
-      var ca=a.localService===false?0:1, cb=b.localService===false?0:1;
-      return ca!==cb ? ca-cb : a.name.localeCompare(b.name);
-    });
+    // Reihenfolge wie vom System gemeldet – die erste ist der Auto-Standard
     var found=false;
     vs.forEach(function(v){
       var o=document.createElement("option");
@@ -637,6 +615,8 @@
     if(!running){remaining=cfg.secs;total=cfg.secs;render();}});
   el.sheet.addEventListener("click",function(e){if(e.target===el.sheet){el.close.click();}});
   el.cCount.addEventListener("change",readCfg);
+  [el.cVoice,el.cVib,el.cWake].forEach(function(c){c.addEventListener("change",readCfg);});
+  el.cVol.addEventListener("input",readCfg);
 
   document.querySelectorAll(".preset").forEach(function(p){
     p.addEventListener("click",function(){
