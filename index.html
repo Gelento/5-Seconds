@@ -69,7 +69,7 @@
   .row input[type=number]{width:76px;padding:8px;border-radius:8px;border:1px solid var(--line);
     background:var(--card2);color:var(--txt);font-size:16px;text-align:center}
   .row input[type=range]{width:130px;accent-color:var(--acc)}
-  .row select{padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;max-width:170px}
+  .row select{padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;max-width:180px}
   .switch{position:relative;width:50px;height:29px;flex:0 0 auto}
   .switch input{opacity:0;width:0;height:0}
   .slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:29px;cursor:pointer;transition:.2s}
@@ -155,6 +155,10 @@
         <option value="full" selected>Full (with names)</option>
         <option value="min">Minimal</option>
       </select></div>
+    <div class="row"><label id="uiVoiceSel">Voice</label>
+      <select id="cfgVoiceSel">
+        <option value="auto" selected>Automatic</option>
+      </select></div>
     <div class="row"><label id="uiVib">Vibration</label>
       <span class="switch"><input type="checkbox" id="cfgVib" checked><span class="slider"></span></span></div>
     <div class="row"><label id="uiWake">Keep screen awake</label>
@@ -180,6 +184,7 @@
       timer:"Timer", secs:"Seconds per player", rounds:"Rounds", brk:"Break (seconds)",
       players:"Players", count:"Count", signals:"Signals", voice:"Voice announcements",
       spMode:"Announcement style", spFull:"Full (with names)", spMin:"Minimal",
+      voiceSel:"Voice", autoVoice:"Automatic",
       vib:"Vibration", wake:"Keep screen awake", vol:"Volume", done:"Done",
       hint:"iPhone tip: set the side switch to ring mode and tap \"Test\" once so iOS unlocks audio and speech. \"Keep screen awake\" prevents the screen from locking while the timer runs.",
       ready:"Ready", waiting:"Waiting to start", active:"Your turn", pause:"Break", finished:"Done 🎉",
@@ -193,7 +198,7 @@
       start:"Start", pauseBtn:"Pause", resume:"Resume",
       playerDefault:function(i){return "Player "+i;},
       prRounds:function(s,r){return s+" s · "+r+" rounds";}, prBlitz:"Blitz 20 s",
-      voiceUsing:function(n){return "Voice: "+n;}, voiceNone:"No speech voice available on this device",
+      voiceUsing:function(n){return "Active voice: "+n;}, voiceNone:"No speech voice available on this device",
       bcp:"en-US", num:numEn,
       sp:{
         full:{
@@ -225,6 +230,7 @@
       timer:"Timer", secs:"Sekunden pro Spieler", rounds:"Runden", brk:"Pause (Sekunden)",
       players:"Spieler", count:"Anzahl", signals:"Signale", voice:"Sprachansagen",
       spMode:"Ansagen-Stil", spFull:"Ausführlich (mit Namen)", spMin:"Minimal",
+      voiceSel:"Stimme", autoVoice:"Automatisch",
       vib:"Vibration", wake:"Display wachhalten", vol:"Lautstärke", done:"Fertig",
       hint:"iPhone-Tipp: Seitenschalter auf Ton stellen und einmal „Test“ tippen, damit iOS Audio und Sprache freigibt. „Display wachhalten“ verhindert die Bildschirmsperre, solange der Timer läuft.",
       ready:"Bereit", waiting:"Warte auf Start", active:"Am Zug", pause:"Pause", finished:"Fertig 🎉",
@@ -238,7 +244,7 @@
       start:"Start", pauseBtn:"Pause", resume:"Weiter",
       playerDefault:function(i){return "Spieler "+i;},
       prRounds:function(s,r){return s+" s · "+r+" Runden";}, prBlitz:"Blitz 20 s",
-      voiceUsing:function(n){return "Stimme: "+n;}, voiceNone:"Keine Sprachstimme auf diesem Gerät verfügbar",
+      voiceUsing:function(n){return "Aktive Stimme: "+n;}, voiceNone:"Keine Sprachstimme auf diesem Gerät verfügbar",
       bcp:"de-DE", num:numDe,
       sp:{
         full:{
@@ -269,17 +275,10 @@
 
   // ---------- Config (im Speicher) ----------
   var cfg = { lang:"en", secs:30, rounds:3, brk:60, count:4, voice:true, spMode:"full",
-              vib:true, wake:true, vol:0.8, names:[] };
+              voiceName:"auto", vib:true, wake:true, vol:0.8, names:[] };
   function L(){ return T[cfg.lang]; }
   for(var i=1;i<=4;i++) cfg.names.push(L().playerDefault(i));
 
-  // Ansage-Helfer: wählt je nach Modus die passende Formulierung
-  function ph(key,name,r){
-    var s=L().sp[cfg.spMode][key];
-    if(typeof s==="function") return cfg.spMode==="full" ? s(r!==undefined?r:name, r!==undefined?name:undefined) : s(r);
-    return s;
-  }
-  // Klarere Variante ohne Argument-Jonglage:
   function phrase(key,args){
     args=args||{};
     var mode=L().sp[cfg.spMode], s=mode[key];
@@ -293,7 +292,8 @@
     ring:$("ring"),prog:$("progCircle"),next:$("nextUp"),start:$("startBtn"),reset:$("resetBtn"),test:$("testBtn"),
     sheet:$("sheet"),gear:$("gearBtn"),close:$("closeBtn"),fs:$("fsBtn"),
     cLang:$("cfgLang"),cSecs:$("cfgSecs"),cRounds:$("cfgRounds"),cBrk:$("cfgBreak"),cCount:$("cfgCount"),
-    cVoice:$("cfgVoice"),cSpMode:$("cfgSpMode"),cVib:$("cfgVib"),cWake:$("cfgWake"),cVol:$("cfgVol"),
+    cVoice:$("cfgVoice"),cSpMode:$("cfgSpMode"),cVoiceSel:$("cfgVoiceSel"),
+    cVib:$("cfgVib"),cWake:$("cfgWake"),cVol:$("cfgVol"),
     nameList:$("nameList"),vInfo:$("voiceInfo")};
   var CIRC=282.74;
 
@@ -319,42 +319,79 @@
   function vib(p){if(cfg.vib&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 
   // ---------- Sprachausgabe ----------
-  // Punktesystem: Premium-/Enhanced-Stimmen zuerst, dann bekannte gute Namen,
-  // dann Cloud-Stimmen, dann exakte Sprachregion. Läuft rein clientseitig –
-  // funktioniert damit unverändert auch auf GitHub Pages.
+  // Auto-Priorisierung: 1. Cloud-Stimmen, 2. Premium/Enhanced, 3. bekannte gute
+  // Namen, 4. exakte Sprachregion. Alternativ manuelle Wahl über das Dropdown.
+  // Alles rein clientseitig (Web Speech API) – läuft unverändert auf GitHub Pages.
   var chosenVoice=null, voicesReady=false;
+  function langVoices(){
+    if(!window.speechSynthesis) return [];
+    var pre=L().bcp.slice(0,2);
+    return window.speechSynthesis.getVoices().filter(function(v){
+      return v.lang && v.lang.replace("_","-").indexOf(pre)===0;
+    });
+  }
   function scoreVoice(v){
-    var t=L(), s=0, name=v.name||"", lang=v.lang||"";
-    if(lang.indexOf(t.bcp.slice(0,2))!==0) return -1;           // falsche Sprache
+    var t=L(), s=0, name=v.name||"", lang=(v.lang||"").replace("_","-");
+    if(v.localService===false) s+=14;                            // Cloud-Stimme zuerst
     if(/premium|enhanced|natural|neural|siri/i.test(name)) s+=10;
     for(var p=0;p<t.prefVoices.length;p++){
       if(name.indexOf(t.prefVoices[p])>=0){ s+=8-Math.min(p,6); break; }
     }
-    if(v.localService===false) s+=4;                             // Cloud-Stimme
-    if(lang===t.bcp||lang.replace("_","-")===t.bcp) s+=3;        // exakte Region
+    if(lang===t.bcp) s+=3;                                       // exakte Region
     if(/compact/i.test(name)) s-=5;                              // Billig-Variante meiden
     return s;
   }
-  function pickVoice(){
+  function resolveVoice(){
     chosenVoice=null;
-    if(!window.speechSynthesis) { updVoiceInfo(); return; }
-    var vs=window.speechSynthesis.getVoices();
+    var vs=langVoices();
     if(vs.length) voicesReady=true;
+    // Manuelle Auswahl?
+    if(cfg.voiceName!=="auto"){
+      for(var i=0;i<vs.length;i++){
+        if(vs[i].name===cfg.voiceName){chosenVoice=vs[i];updVoiceInfo();return;}
+      }
+      cfg.voiceName="auto";                                      // Stimme weg → zurück auf Auto
+      el.cVoiceSel.value="auto";
+    }
+    // Auto: beste Stimme per Punktesystem
     var best=-1;
-    for(var i=0;i<vs.length;i++){
+    for(i=0;i<vs.length;i++){
       var sc=scoreVoice(vs[i]);
       if(sc>best){best=sc;chosenVoice=vs[i];}
     }
     updVoiceInfo();
   }
+  function populateVoiceSel(){
+    var t=L(), vs=langVoices(), cur=cfg.voiceName;
+    el.cVoiceSel.innerHTML="";
+    var opt=document.createElement("option");
+    opt.value="auto";opt.textContent=t.autoVoice;
+    el.cVoiceSel.appendChild(opt);
+    // Cloud-Stimmen im Dropdown zuerst, dann Rest – jeweils alphabetisch
+    vs.sort(function(a,b){
+      var ca=a.localService===false?0:1, cb=b.localService===false?0:1;
+      return ca!==cb ? ca-cb : a.name.localeCompare(b.name);
+    });
+    var found=false;
+    vs.forEach(function(v){
+      var o=document.createElement("option");
+      o.value=v.name;
+      o.textContent=v.name+(v.localService===false?" ☁︎":"");
+      el.cVoiceSel.appendChild(o);
+      if(v.name===cur)found=true;
+    });
+    el.cVoiceSel.value=found?cur:"auto";
+    if(!found)cfg.voiceName="auto";
+  }
   function updVoiceInfo(){
     var t=L();
-    el.vInfo.textContent = chosenVoice ? t.voiceUsing(chosenVoice.name)
+    el.vInfo.textContent = chosenVoice ? t.voiceUsing(chosenVoice.name+(chosenVoice.localService===false?" ☁︎":""))
                          : (window.speechSynthesis?"":t.voiceNone);
   }
+  function refreshVoices(){populateVoiceSel();resolveVoice();}
   if(window.speechSynthesis){
-    pickVoice();
-    window.speechSynthesis.onvoiceschanged=pickVoice;
+    refreshVoices();
+    window.speechSynthesis.onvoiceschanged=refreshVoices;
   }
 
   // Chrome-Bug-Workaround: Desktop-Chrome pausiert lange Ansagen nach ~15 s.
@@ -379,7 +416,6 @@
       u.lang=L().bcp;
       if(chosenVoice)u.voice=chosenVoice;
       u.volume=Math.min(1,cfg.vol+0.1);
-      // Minimal-Ansagen etwas knackiger, ausführliche Ansagen ruhiger
       u.rate=opts.rate||(cfg.spMode==="min"?1.08:(cfg.lang==="de"?0.98:1.02));
       u.pitch=1.0;
       u.onend=function(){keepAlive(false);};
@@ -392,7 +428,7 @@
     if(!window.speechSynthesis)return;
     try{window.speechSynthesis.cancel();window.speechSynthesis.resume();
       var u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang=L().bcp;window.speechSynthesis.speak(u);
-      if(!voicesReady)setTimeout(pickVoice,300);   // iOS lädt Stimmen erst nach erster Nutzung
+      if(!voicesReady)setTimeout(refreshVoices,300);  // iOS lädt Stimmen erst nach erster Nutzung
     }catch(e){}
   }
 
@@ -450,6 +486,7 @@
     $("uiSpMode").textContent=t.spMode;
     el.cSpMode.options[0].textContent=t.spFull;
     el.cSpMode.options[1].textContent=t.spMin;
+    $("uiVoiceSel").textContent=t.voiceSel;
     $("uiVib").textContent=t.vib;$("uiWake").textContent=t.wake;$("uiVol").textContent=t.vol;
     $("closeBtn").textContent=t.done;$("uiHint").textContent=t.hint;
     $("pr1").textContent=t.prRounds(30,3);$("pr2").textContent=t.prRounds(60,3);
@@ -459,7 +496,8 @@
     for(var i=0;i<cfg.names.length;i++){
       if(cfg.names[i]===other.playerDefault(i+1))cfg.names[i]=t.playerDefault(i+1);
     }
-    buildNames();pickVoice();render();
+    cfg.voiceName="auto";           // Sprachwechsel → Stimme neu wählen
+    buildNames();refreshVoices();render();
   }
 
   function flash(kind){
@@ -576,7 +614,14 @@
 
   el.cLang.addEventListener("change",function(){cfg.lang=this.value;applyLang();});
   el.cSpMode.addEventListener("change",readCfg);
-  el.gear.addEventListener("click",function(){el.sheet.classList.add("open");});
+  el.cVoiceSel.addEventListener("change",function(){
+    cfg.voiceName=this.value;
+    resolveVoice();
+    // Kurze Hörprobe der gewählten Stimme
+    ensureAudio();primeSpeech();
+    setTimeout(function(){speak(phrase("test"));},150);
+  });
+  el.gear.addEventListener("click",function(){refreshVoices();el.sheet.classList.add("open");});
   el.close.addEventListener("click",function(){el.sheet.classList.remove("open");readCfg();
     if(!running){remaining=cfg.secs;total=cfg.secs;render();}});
   el.sheet.addEventListener("click",function(e){if(e.target===el.sheet){el.close.click();}});
