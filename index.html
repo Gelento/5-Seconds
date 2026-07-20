@@ -389,6 +389,17 @@
                          : (window.speechSynthesis?"":t.voiceNone);
   }
   function refreshVoices(){populateVoiceSel();resolveVoice();}
+  // iOS meldet die Stimmenliste oft erst verspätet oder unvollständig –
+  // deshalb nach der ersten Interaktion mehrfach nachladen.
+  var voicePolls=0;
+  function pollVoices(){
+    var before=langVoices().length;
+    refreshVoices();
+    voicePolls++;
+    if(voicePolls<12&&(langVoices().length<2||langVoices().length!==before)){
+      setTimeout(pollVoices,600);
+    }
+  }
   if(window.speechSynthesis){
     refreshVoices();
     window.speechSynthesis.onvoiceschanged=refreshVoices;
@@ -428,7 +439,7 @@
     if(!window.speechSynthesis)return;
     try{window.speechSynthesis.cancel();window.speechSynthesis.resume();
       var u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang=L().bcp;window.speechSynthesis.speak(u);
-      if(!voicesReady)setTimeout(refreshVoices,300);  // iOS lädt Stimmen erst nach erster Nutzung
+      if(voicePolls===0)setTimeout(pollVoices,300);   // iOS lädt Stimmen erst nach erster Nutzung
     }catch(e){}
   }
 
